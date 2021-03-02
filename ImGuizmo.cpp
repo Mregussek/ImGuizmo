@@ -632,7 +632,11 @@ namespace ImGuizmo
    }
 
    // Matches MT_MOVE_AB order
-   static const OPERATION TRANSLATE_PLANS[3] = { TRANSLATE_Y | TRANSLATE_Z, TRANSLATE_X | TRANSLATE_Z, TRANSLATE_X | TRANSLATE_Y };
+   static const OPERATION TRANSLATE_PLANS[3] = {
+      OPERATION::TRANSLATE_Y | OPERATION::TRANSLATE_Z,
+      OPERATION::TRANSLATE_X | OPERATION::TRANSLATE_Z,
+      OPERATION::TRANSLATE_X | OPERATION::TRANSLATE_Y
+   };
 
    struct Context
    {
@@ -933,9 +937,9 @@ namespace ImGuizmo
 
    bool IsOver()
    {
-      return (Intersects(gContext.mOperation, TRANSLATE) && GetMoveType(gContext.mOperation, NULL) != MT_NONE) ||
-         (Intersects(gContext.mOperation, ROTATE) && GetRotateType(gContext.mOperation) != MT_NONE) ||
-         (Intersects(gContext.mOperation, SCALE) && GetScaleType(gContext.mOperation) != MT_NONE) || IsUsing();
+      return (Intersects(gContext.mOperation, OPERATION::TRANSLATE) && GetMoveType(gContext.mOperation, NULL) != MT_NONE) ||
+         (Intersects(gContext.mOperation, OPERATION::ROTATE) && GetRotateType(gContext.mOperation) != MT_NONE) ||
+         (Intersects(gContext.mOperation, OPERATION::SCALE) && GetScaleType(gContext.mOperation) != MT_NONE) || IsUsing();
    }
 
    bool IsOver(OPERATION op)
@@ -944,15 +948,15 @@ namespace ImGuizmo
       {
          return true;
       }
-      if(Intersects(op, SCALE) && GetScaleType(op) != MT_NONE)
+      if(Intersects(op, OPERATION::SCALE) && GetScaleType(op) != MT_NONE)
       {
          return true;
       }
-      if(Intersects(op, ROTATE) && GetRotateType(op) != MT_NONE)
+      if(Intersects(op, OPERATION::ROTATE) && GetRotateType(op) != MT_NONE)
       {
          return true;
       }
-      if(Intersects(op, TRANSLATE) && GetMoveType(op, NULL) != MT_NONE)
+      if(Intersects(op, OPERATION::TRANSLATE) && GetMoveType(op, NULL) != MT_NONE)
       {
          return true;
       }
@@ -1030,7 +1034,7 @@ namespace ImGuizmo
       {
          switch (operation)
          {
-         case TRANSLATE:
+         case OPERATION::TRANSLATE:
             colors[0] = (type == MT_MOVE_SCREEN) ? selectionColor : 0xFFFFFFFF;
             for (int i = 0; i < 3; i++)
             {
@@ -1039,14 +1043,14 @@ namespace ImGuizmo
                colors[i + 4] = (type == MT_MOVE_SCREEN) ? selectionColor : colors[i + 4];
             }
             break;
-         case ROTATE:
+         case OPERATION::ROTATE:
             colors[0] = (type == MT_ROTATE_SCREEN) ? selectionColor : 0xFFFFFFFF;
             for (int i = 0; i < 3; i++)
             {
                colors[i + 1] = (type == (int)(MT_ROTATE_X + i)) ? selectionColor : directionColor[i];
             }
             break;
-         case SCALE:
+         case OPERATION::SCALE:
             colors[0] = (type == MT_SCALE_XYZ) ? selectionColor : 0xFFFFFFFF;
             for (int i = 0; i < 3; i++)
             {
@@ -1162,7 +1166,7 @@ namespace ImGuizmo
 
    static void DrawRotationGizmo(OPERATION op, int type)
    {
-      if(!Intersects(op, ROTATE))
+      if(!Intersects(op, OPERATION::ROTATE))
       {
          return;
       }
@@ -1170,7 +1174,7 @@ namespace ImGuizmo
 
       // colors
       ImU32 colors[7];
-      ComputeColors(colors, type, ROTATE);
+      ComputeColors(colors, type, OPERATION::ROTATE);
 
       vec_t cameraToModelNormalized;
       if (gContext.mIsOrthographic)
@@ -1188,13 +1192,13 @@ namespace ImGuizmo
 
       gContext.mRadiusSquareCenter = screenRotateSize * gContext.mHeight;
 
-      bool hasRSC = Intersects(op, ROTATE_SCREEN);
+      bool hasRSC = Intersects(op, OPERATION::ROTATE_SCREEN);
       int circleMul = hasRSC ? 1 : 2;
       constexpr float circleLineThickness = 6.0f;
       constexpr float lineThickness = 6.0f;
       for (int axis = 0; axis < 3; axis++)
       {
-         if(!Intersects(op, static_cast<OPERATION>(ROTATE_Z >> axis)))
+         if(!Intersects(op, static_cast<OPERATION>((int)OPERATION::ROTATE_Z >> axis)))
          {
             continue;
          }
@@ -1263,14 +1267,14 @@ namespace ImGuizmo
    {
       ImDrawList* drawList = gContext.mDrawList;
 
-      if(!Intersects(op, SCALE))
+      if(!Intersects(op, OPERATION::SCALE))
       {
         return;
       }
 
       // colors
       ImU32 colors[7];
-      ComputeColors(colors, type, SCALE);
+      ComputeColors(colors, type, OPERATION::SCALE);
 
       // draw
       vec_t scaleDisplay = { 1.f, 1.f, 1.f, 1.f };
@@ -1284,7 +1288,7 @@ namespace ImGuizmo
 	   constexpr float circleSize = 12.0f;
       for (unsigned int i = 0; i < 3; i++)
       {
-         if(!Intersects(op, static_cast<OPERATION>(SCALE_X << i)))
+         if(!Intersects(op, static_cast<OPERATION>((int)OPERATION::SCALE_X << i)))
          {
             continue;
          }
@@ -1295,7 +1299,7 @@ namespace ImGuizmo
          // draw axis
          if (belowAxisLimit)
          {
-            bool hasTranslateOnAxis = Contains(op, static_cast<OPERATION>(TRANSLATE_X << i)) ;
+            bool hasTranslateOnAxis = Contains(op, static_cast<OPERATION>((int)OPERATION::TRANSLATE_X << i)) ;
             float markerScale = hasTranslateOnAxis ? 1.4f : 1.0f;
             ImVec2 baseSSpace = worldToPos(dirAxis * 0.1f * gContext.mScreenFactor, gContext.mMVP);
             ImVec2 worldDirSSpaceNoScale = worldToPos(dirAxis * markerScale * gContext.mScreenFactor, gContext.mMVP);
@@ -1352,14 +1356,14 @@ namespace ImGuizmo
          return;
       }
 
-      if(!Intersects(op, TRANSLATE))
+      if(!Intersects(op, OPERATION::TRANSLATE))
       {
          return;
       }
 
       // colors
       ImU32 colors[7];
-      ComputeColors(colors, type, TRANSLATE);
+      ComputeColors(colors, type, OPERATION::TRANSLATE);
 
       const ImVec2 origin = worldToPos(gContext.mModel.v.position, gContext.mViewProjection);
 
@@ -1374,7 +1378,7 @@ namespace ImGuizmo
          ComputeTripodAxisAndVisibility(i, dirAxis, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
 
          // draw axis
-         if (belowAxisLimit && Intersects(op, static_cast<OPERATION>(TRANSLATE_X << i)))
+         if (belowAxisLimit && Intersects(op, static_cast<OPERATION>((int)OPERATION::TRANSLATE_X << i)))
          {
             ImVec2 baseSSpace = worldToPos(dirAxis * 0.1f * gContext.mScreenFactor, gContext.mMVP);
             ImVec2 worldDirSSpace = worldToPos(dirAxis * gContext.mScreenFactor, gContext.mMVP);
@@ -1562,15 +1566,15 @@ namespace ImGuizmo
             int type = MT_NONE;
             vec_t gizmoHitProportion;
 
-            if(Intersects(operation, TRANSLATE))
+            if(Intersects(operation, OPERATION::TRANSLATE))
             {
                type = GetMoveType(operation, &gizmoHitProportion);
             }
-            if(Intersects(operation, ROTATE) && type == MT_NONE)
+            if(Intersects(operation, OPERATION::ROTATE) && type == MT_NONE)
             {
                type = GetRotateType(operation);
             }
-            if(Intersects(operation, SCALE) && type == MT_NONE)
+            if(Intersects(operation, OPERATION::SCALE) && type == MT_NONE)
             {
                type = GetScaleType(operation);
             }
@@ -1714,7 +1718,7 @@ namespace ImGuizmo
       // screen
       if (io.MousePos.x >= gContext.mScreenSquareMin.x && io.MousePos.x <= gContext.mScreenSquareMax.x &&
          io.MousePos.y >= gContext.mScreenSquareMin.y && io.MousePos.y <= gContext.mScreenSquareMax.y &&
-         Contains(op, SCALE))
+         Contains(op, OPERATION::SCALE))
       {
          type = MT_SCALE_XYZ;
       }
@@ -1722,7 +1726,7 @@ namespace ImGuizmo
       // compute
       for (unsigned int i = 0; i < 3 && type == MT_NONE; i++)
       {
-         if(!Intersects(op, static_cast<OPERATION>(SCALE_X << i)))
+         if(!Intersects(op, static_cast<OPERATION>((int)OPERATION::SCALE_X << i)))
          {
             continue;
          }
@@ -1736,8 +1740,8 @@ namespace ImGuizmo
          const float len = IntersectRayPlane(gContext.mRayOrigin, gContext.mRayVector, BuildPlan(gContext.mModel.v.position, dirAxis));
          vec_t posOnPlan = gContext.mRayOrigin + gContext.mRayVector * len;
 
-         const float startOffset = Contains(op, static_cast<OPERATION>(TRANSLATE_X << i)) ? 1.0f : 0.1f;
-         const float endOffset = Contains(op, static_cast<OPERATION>(TRANSLATE_X << i)) ? 1.4f : 1.0f;
+         const float startOffset = Contains(op, static_cast<OPERATION>((int)OPERATION::TRANSLATE_X << i)) ? 1.0f : 0.1f;
+         const float endOffset = Contains(op, static_cast<OPERATION>((int)OPERATION::TRANSLATE_X << i)) ? 1.4f : 1.0f;
          const ImVec2 posOnPlanScreen = worldToPos(posOnPlan, gContext.mViewProjection);
          const ImVec2 axisStartOnScreen = worldToPos(gContext.mModel.v.position + dirAxis * gContext.mScreenFactor * startOffset, gContext.mViewProjection);
          const ImVec2 axisEndOnScreen = worldToPos(gContext.mModel.v.position + dirAxis * gContext.mScreenFactor * endOffset, gContext.mViewProjection);
@@ -1759,7 +1763,7 @@ namespace ImGuizmo
 
       vec_t deltaScreen = { io.MousePos.x - gContext.mScreenSquareCenter.x, io.MousePos.y - gContext.mScreenSquareCenter.y, 0.f, 0.f };
       float dist = deltaScreen.Length();
-      if (Intersects(op, ROTATE_SCREEN) && dist >= (gContext.mRadiusSquareCenter * 1.1f - 3.0f) && dist < (gContext.mRadiusSquareCenter * 1.1f + 2.0f))
+      if (Intersects(op, OPERATION::ROTATE_SCREEN) && dist >= (gContext.mRadiusSquareCenter * 1.1f - 3.0f) && dist < (gContext.mRadiusSquareCenter * 1.1f + 2.0f))
       {
          type = MT_ROTATE_SCREEN;
       }
@@ -1768,7 +1772,7 @@ namespace ImGuizmo
 
       for (unsigned int i = 0; i < 3 && type == MT_NONE; i++)
       {
-         if(!Intersects(op, static_cast<OPERATION>(ROTATE_X << i)))
+         if(!Intersects(op, static_cast<OPERATION>((int)OPERATION::ROTATE_X << i)))
          {
             continue;
          }
@@ -1801,7 +1805,7 @@ namespace ImGuizmo
 
    static int GetMoveType(OPERATION op, vec_t* gizmoHitProportion)
    {
-      if(!Intersects(op, TRANSLATE))
+      if(!Intersects(op, OPERATION::TRANSLATE))
       {
         return MT_NONE;
       }
@@ -1811,7 +1815,7 @@ namespace ImGuizmo
       // screen
       if (io.MousePos.x >= gContext.mScreenSquareMin.x && io.MousePos.x <= gContext.mScreenSquareMax.x &&
          io.MousePos.y >= gContext.mScreenSquareMin.y && io.MousePos.y <= gContext.mScreenSquareMax.y &&
-         Contains(op, TRANSLATE))
+         Contains(op, OPERATION::TRANSLATE))
       {
          type = MT_MOVE_SCREEN;
       }
@@ -1835,7 +1839,7 @@ namespace ImGuizmo
          const ImVec2 axisEndOnScreen = worldToPos(gContext.mModel.v.position + dirAxis * gContext.mScreenFactor, gContext.mViewProjection) - ImVec2(gContext.mX, gContext.mY);
 
          vec_t closestPointOnAxis = PointOnSegment(screenCoord, makeVect(axisStartOnScreen), makeVect(axisEndOnScreen));
-         if ((closestPointOnAxis - screenCoord).Length() < 12.f && Intersects(op, static_cast<OPERATION>(TRANSLATE_X << i))) // pixel size
+         if ((closestPointOnAxis - screenCoord).Length() < 12.f && Intersects(op, static_cast<OPERATION>((int)OPERATION::TRANSLATE_X << i))) // pixel size
          {
             type = MT_MOVE_X + i;
          }
@@ -1857,7 +1861,7 @@ namespace ImGuizmo
 
    static bool HandleTranslation(float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
    {
-      if(!Intersects(op, TRANSLATE) || type != MT_NONE)
+      if(!Intersects(op, OPERATION::TRANSLATE) || type != MT_NONE)
       {
         return false;
       }
@@ -1970,7 +1974,7 @@ namespace ImGuizmo
 
    static bool HandleScale(float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
    {
-      if(!Intersects(op, SCALE) || type != MT_NONE)
+      if(!Intersects(op, OPERATION::SCALE) || type != MT_NONE)
       {
          return false;
       }
@@ -2085,7 +2089,7 @@ namespace ImGuizmo
 
    static bool HandleRotation(float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
    {
-      if(!Intersects(op, ROTATE) || type != MT_NONE)
+      if(!Intersects(op, OPERATION::ROTATE) || type != MT_NONE)
       {
         return false;
       }
